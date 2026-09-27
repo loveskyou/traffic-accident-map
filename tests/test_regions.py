@@ -66,10 +66,22 @@ def test_site_regions_groups_in_order():
     ]
 
 
+def test_incheon_donggu_legacy_code_is_added():
+    result = by_name(regions.build_regions(SIDO + [("인천광역시", 28)], GUGUN))
+    assert result[("인천광역시", "동구(구)")]["codes"] == [[28, 140]]
+
+
+def test_site_regions_hides_legacy_names():
+    rows = GUGUN + [("서울특별시", "남구(구)", 170)]
+    out = regions.site_regions(regions.build_regions(SIDO, rows))
+    assert all(not g["name"].endswith("(구)") for grp in out for g in grp["gugun"])
+    assert by_name(regions.build_regions(SIDO, rows))[("서울특별시", "남구(구)")]["codes"] == [[11, 170]]
+
+
 @pytest.mark.skipif(not regions.CODE_FILE.exists(), reason="코드 파일 없음")
 def test_real_code_file():
     result = regions.load_regions()
-    assert len(result) == 270
+    assert len(result) == 271
     assert all(100 <= g <= 999 for r in result for _, g in r["codes"])
     named = by_name(result)
     assert named[("전남광주통합특별시", "광산구")]["codes"] == [[12, 330], [29, 200]]
