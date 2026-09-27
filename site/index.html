@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전국 교통사고 다발지역 지도</title>
+<meta name="description" content="도로교통공단 자료로 보는 전국 교통사고 다발지역 지도. 보행자, 어린이, 노인, 자전거, 이륜차, 음주운전, 화물차, 결빙 사고 다발지역을 연도별로 확인하세요.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <h1 class="title">교통사고 다발지역 지도</h1>
+    <form id="search-form" class="search" role="search">
+      <input id="search-input" type="search" placeholder="장소·주소 검색 (예: 홍대입구역)" aria-label="장소 또는 주소 검색" autocomplete="off">
+      <button type="button" id="region-open" class="btn">지역</button>
+      <ul id="search-results" class="results" hidden></ul>
+    </form>
+    <div class="filters">
+      <label><span class="sr-only">기준연도</span><select id="year"></select></label>
+      <label class="check"><input type="checkbox" id="streak-only"> 연속 다발만 보기</label>
+    </div>
+    <section class="sheet">
+      <div class="sheet-head">
+        <div id="type-chips" class="chips"></div>
+        <button type="button" id="sheet-toggle" class="sheet-toggle" aria-expanded="false" aria-controls="type-list" aria-label="유형 설명 펼치기">▲</button>
+      </div>
+      <ul id="type-list" class="type-list"></ul>
+    </section>
+    <footer class="foot">
+      <p>자료: 도로교통공단 교통사고정보개방시스템 · 갱신 <span id="updated"></span></p>
+      <p>과거 통계이며 현재 도로 상황과 다를 수 있습니다.</p>
+    </footer>
+  </aside>
+  <main class="map-wrap">
+    <div id="map" class="map" aria-label="교통사고 다발지역 지도"></div>
+    <p id="map-error" class="map-error" hidden></p>
+    <section id="detail" class="detail" hidden aria-live="polite">
+      <button type="button" id="detail-close" class="detail-close" aria-label="닫기">×</button>
+      <div id="detail-body"></div>
+    </section>
+  </main>
+</div>
+<div id="region-dialog" class="dialog" hidden>
+  <div class="dialog-box" role="dialog" aria-modal="true" aria-labelledby="region-title">
+    <h2 id="region-title">지역 선택</h2>
+    <select id="region-sido" aria-label="시도"></select>
+    <select id="region-gugun" aria-label="시군구" disabled><option value="">시군구 선택</option></select>
+    <p id="region-msg" class="muted"></p>
+    <div class="dialog-actions">
+      <button type="button" id="region-cancel" class="btn">취소</button>
+      <button type="button" id="region-go" class="btn primary">이동</button>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
