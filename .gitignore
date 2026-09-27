@@ -9,3 +9,9 @@ raw/
 __pycache__/
 *.pyc
 .venv/
+
+# 브라우저 자동화 기록
+.playwright-mcp/
+
+# 작업 기록(계획 실행용 임시 폴더)
+.superpowers/
