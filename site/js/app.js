@@ -2,7 +2,7 @@ import { KAKAO_JS_KEY } from "./config.js";
 import { loadKakao, createMap } from "./mapAdapter.js";
 import { getMeta, getTypes, getRegions, getPoints, getPolygons } from "./data.js";
 import { createState } from "./state.js";
-import { activeTypeIds, filterPoints, pointsNear, inBounds, detailHtml, createLatest } from "./logic.js";
+import { activeTypeIds, filterPoints, pointsNear, inBounds, detailHtml, detailAllHtml, createLatest, ALL } from "./logic.js";
 import {
   showMapError, showFooter, setupControls, markTypeError, showDetail, showChooser,
   setupDetailClose, setupSearch, setupRegions,
@@ -14,7 +14,7 @@ const NEAR_METERS = 30;
 async function main() {
   const [meta, types, regions] = await Promise.all([getMeta(), getTypes(), getRegions()]);
   const typeById = Object.fromEntries(types.map((t) => [t.id, t]));
-  const state = createState({ year: Math.max(...meta.years), enabled: new Set(["lg"]), streakOnly: false });
+  const state = createState({ year: ALL, enabled: new Set(["lg"]), streakOnly: false });
   showFooter(meta);
   setupControls({ types, years: meta.years, state });
   setupDetailClose();
@@ -34,13 +34,18 @@ async function main() {
   const pointsTurn = createLatest();
   const polygonsTurn = createLatest();
 
-  const openPoint = (point) => {
+  const detailOf = (point) => {
     const year = state.get().year;
+    const type = typeById[point.t];
+    return year === ALL ? detailAllHtml(point, type) : detailHtml(point, type, year);
+  };
+
+  const openPoint = (point) => {
     const near = pointsNear(visible, point.lat, point.lng, NEAR_METERS);
     if (near.length > 1) {
-      showChooser(near, typeById, (picked) => showDetail(detailHtml(picked, typeById[picked.t], year)));
+      showChooser(near, typeById, (picked) => showDetail(detailOf(picked)));
     } else {
-      showDetail(detailHtml(point, typeById[point.t], year));
+      showDetail(detailOf(point));
     }
   };
 
@@ -55,14 +60,15 @@ async function main() {
     const inView = visible.filter((p) => inBounds(p, bounds));
     const files = new Map();
     for (const p of inView) {
-      const key = `${p.t}|${p.sd}`;
-      if (!files.has(key)) files.set(key, getPolygons(year, p.t, p.sd).catch(() => ({})));
+      // 전체 연도 보기의 점은 가장 최근 해(py)의 구역 모양(pid)을 쓴다.
+      const key = `${p.py ?? year}|${p.t}|${p.sd}`;
+      if (!files.has(key)) files.set(key, getPolygons(p.py ?? year, p.t, p.sd).catch(() => ({})));
     }
     const loaded = new Map();
     for (const [key, promise] of files) loaded.set(key, await promise);
     if (!polygonsTurn.isCurrent(turn)) return;
     map.showPolygons(inView.flatMap((p) => {
-      const coords = loaded.get(`${p.t}|${p.sd}`)?.[p.id];
+      const coords = loaded.get(`${p.py ?? year}|${p.t}|${p.sd}`)?.[p.pid ?? p.id];
       return coords ? [{ coords, color: typeById[p.t].color }] : [];
     }));
   }
@@ -81,7 +87,7 @@ async function main() {
       }
     }));
     if (!pointsTurn.isCurrent(turn)) return;
-    visible = filterPoints(lists.flat(), { streakOnly });
+    visible = filterPoints(lists.flat(), year === ALL ? { multiYearOnly: streakOnly } : { streakOnly });
     map.showPoints(visible, (p) => typeById[p.t].color, openPoint);
     document.getElementById("detail").hidden = true;
     await renderPolygons();

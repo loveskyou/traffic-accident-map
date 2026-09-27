@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  escapeHtml, periodLabel, activeTypeIds, filterPoints, distanceM, pointsNear, inBounds, detailHtml, createLatest,
+  escapeHtml, periodLabel, activeTypeIds, filterPoints, distanceM, pointsNear, inBounds, detailHtml, createLatest, detailAllHtml, ALL,
 } from "../../site/js/logic.js";
 
 const LG = { id: "lg", name: "일반 (시군구별 상위 3곳)", short: "일반", color: "#E4572E", period: "annual", criteria: "기준 <문장>", years: [2024, 2025] };
@@ -69,4 +69,36 @@ test("createLatest: only the newest ticket is current", () => {
   const b = latest.next();
   assert.equal(latest.isCurrent(a), false);
   assert.equal(latest.isCurrent(b), true);
+});
+
+const MERGED = {
+  id: "lg-all-4", n: "모란 <삼거리>", lat: 37.43, lng: 127.13, sd: 41, c: 86, years: [2021, 2022, 2023, 2025],
+  recs: [[2025, 86, 110, 0, 11, 100, 10], [2023, 70, 90, 1, 5, 80, 4], [2022, 60, 70, 0, 3, 60, 2], [2021, 50, 60, 0, 2, 50, 1]],
+  py: 2025, pid: "lg-2025-9", streak: 3,
+};
+
+test("activeTypeIds for all years: any type with some year", () => {
+  const none = { ...FRZ, id: "x", years: [] };
+  assert.deepEqual(activeTypeIds(new Set(["lg", "pedestrian", "x"]), [LG, PED, none], ALL), ["lg", "pedestrian"]);
+});
+
+test("filterPoints multiYearOnly keeps places seen 2+ years", () => {
+  const pts = [{ years: [2021] }, { years: [2021, 2025] }];
+  assert.deepEqual(filterPoints(pts, { multiYearOnly: true }), [{ years: [2021, 2025] }]);
+});
+
+test("detailAllHtml lists years and a row per year, escaped", () => {
+  const html = detailAllHtml(MERGED, LG);
+  assert.ok(html.includes("모란 &lt;삼거리&gt;") && !html.includes("<삼거리>"));
+  assert.ok(html.includes("다발지역이었던 해: 2021·2022·2023·2025 (4번)"));
+  assert.ok(html.includes("최장 3년 연속"));
+  assert.ok(html.includes("<td>2025</td><td>86</td>") && html.includes("<td>2021</td><td>50</td>"));
+  assert.ok(html.includes("선정 기준: 기준 &lt;문장&gt;"));
+  assert.ok(html.includes("https://map.kakao.com/link/map/"));
+});
+
+test("detailAllHtml explains rolling totals and hides streak", () => {
+  const html = detailAllHtml({ ...MERGED, streak: undefined, years: [2025], recs: [[2025, 9, 9, 0, 1, 8, 0]] }, PED);
+  assert.ok(html.includes("각 해의 숫자는 그 해까지 3년간 집계"));
+  assert.ok(!html.includes("연속"));
 });

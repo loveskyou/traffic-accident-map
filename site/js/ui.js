@@ -1,4 +1,4 @@
-import { escapeHtml } from "./logic.js";
+import { escapeHtml, ALL } from "./logic.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,18 +18,21 @@ export function setupControls({ types, years, state }) {
   $("type-list").innerHTML = types.map((t) => `<li><span class="dot" style="background:${escapeHtml(t.color)}"></span><b>${escapeHtml(t.name)}</b><p>${escapeHtml(t.criteria)}</p></li>`).join("");
 
   const yearSelect = $("year");
-  yearSelect.innerHTML = [...years].sort((a, b) => b - a).map((y) => `<option value="${y}">${y}년 기준</option>`).join("");
+  const sorted = [...years].sort((a, b) => a - b);
+  yearSelect.innerHTML = `<option value="${ALL}">${sorted[0]}~${sorted[sorted.length - 1]} 전체</option>`
+    + [...sorted].reverse().map((y) => `<option value="${y}">${y}년 기준</option>`).join("");
 
   const sync = (s) => {
     chips.querySelectorAll(".chip").forEach((button) => {
       const type = types.find((t) => t.id === button.dataset.id);
-      const available = type.years.includes(s.year);
+      const available = s.year === ALL ? type.years.length > 0 : type.years.includes(s.year);
       button.disabled = !available;
-      button.title = available ? "" : `${s.year}년 자료가 없습니다`;
+      button.title = available ? "" : (s.year === ALL ? "자료가 없습니다" : `${s.year}년 자료가 없습니다`);
       button.setAttribute("aria-pressed", String(available && s.enabled.has(button.dataset.id)));
     });
     yearSelect.value = String(s.year);
     $("streak-only").checked = s.streakOnly;
+    $("streak-label").textContent = s.year === ALL ? "여러 해 다발만 보기" : "연속 다발만 보기";
   };
 
   chips.addEventListener("click", (event) => {
@@ -40,7 +43,7 @@ export function setupControls({ types, years, state }) {
     else next.add(button.dataset.id);
     state.set({ enabled: next });
   });
-  yearSelect.addEventListener("change", () => state.set({ year: Number(yearSelect.value) }));
+  yearSelect.addEventListener("change", () => state.set({ year: yearSelect.value === ALL ? ALL : Number(yearSelect.value) }));
   $("streak-only").addEventListener("change", (event) => state.set({ streakOnly: event.target.checked }));
   $("sheet-toggle").addEventListener("click", () => {
     const open = document.body.classList.toggle("sheet-open");

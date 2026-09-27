@@ -60,6 +60,12 @@ body { font-family: var(--font); color: var(--ink); background: var(--bg); font-
 .d-counts div { background: var(--bg-2); border-radius: 6px; padding: 6px 2px; text-align: center; }
 .d-counts dt { font-size: 11.5px; color: var(--ink-2); }
 .d-counts dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.d-years { margin: 0 0 6px; font-weight: 600; }
+.d-note { margin: 0 0 8px; font-size: 12.5px; color: var(--ink-2); }
+.d-table { width: 100%; border-collapse: collapse; margin: 0 0 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.d-table th { font-weight: 500; font-size: 11.5px; color: var(--ink-2); background: var(--bg-2); padding: 4px 2px; }
+.d-table td { text-align: center; padding: 4px 2px; border-bottom: 1px solid var(--bg-2); }
+.d-table td:first-child { font-weight: 600; }
 .d-criteria { margin: 0 0 8px; font-size: 12.5px; color: var(--ink-2); }
 .d-link { font-size: 14px; color: var(--accent); }
 .d-list { list-style: none; margin: 0; padding: 0; }
