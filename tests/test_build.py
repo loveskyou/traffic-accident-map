@@ -31,6 +31,22 @@ def test_polygon_parsing():
     assert build.polygon_coords(item(1, geom="")) is None
 
 
+def test_multipolygon_uses_first_polygon():
+    ring = [[127.03, 37.5], [127.031, 37.5], [127.031, 37.501], [127.03, 37.5]]
+    geom = json.dumps({"type": "MultiPolygon", "coordinates": [[ring], [[[128.0, 36.0], [128.1, 36.0], [128.0, 36.0]]]]})
+    assert build.polygon_coords(item(1, geom=geom)) == [ring]
+
+
+def test_year_with_only_empty_results_is_not_available(tmp_path):
+    raw, out = tmp_path / "raw", tmp_path / "out"
+    write_raw(raw, "truck", 2024, "11-680", 11, [item(1)])
+    write_raw(raw, "truck", 2025, "11-680", 11, [])
+    build.build(raw_dir=raw, out_dir=out, years=[2024, 2025], today=datetime.date(2026, 9, 27))
+    types = {t["id"]: t for t in read(out / "types.json")}
+    assert types["truck"]["years"] == [2024]
+    assert not (out / "2025" / "truck.json").exists()
+
+
 def test_build_end_to_end(tmp_path):
     raw, out = tmp_path / "raw", tmp_path / "out"
     write_raw(raw, "lg", 2024, "11-680", 11, [item(1, count=3)])

@@ -46,10 +46,16 @@ def polygon_coords(item):
             geom = json.loads(geom)
         except json.JSONDecodeError:
             return None
-    if not isinstance(geom, dict) or geom.get("type") != "Polygon" or not geom.get("coordinates"):
+    if not isinstance(geom, dict) or not geom.get("coordinates"):
+        return None
+    if geom.get("type") == "Polygon":
+        rings = geom["coordinates"]
+    elif geom.get("type") == "MultiPolygon":
+        rings = geom["coordinates"][0]
+    else:
         return None
     try:
-        return [[[round(float(x), 6), round(float(y), 6)] for x, y in ring] for ring in geom["coordinates"]]
+        return [[[round(float(x), 6), round(float(y), 6)] for x, y in ring] for ring in rings]
     except (TypeError, ValueError):
         return None
 
@@ -89,7 +95,10 @@ def build(raw_dir=RAW_DIR, out_dir=OUT_DIR, years=catalog.YEARS, today=None):
                         report["no_polygon"] += 1
                     else:
                         polygons.setdefault((year, point["sd"]), {})[point["id"]] = coords
-            points_by_year[year] = list(seen.values())
+            if seen:
+                points_by_year[year] = list(seen.values())
+            else:
+                (out_dir / str(year) / f"{type_id}.json").unlink(missing_ok=True)
         if t["period"] == "annual":
             assign_streaks(points_by_year, t["radius_m"])
         available[type_id] = sorted(points_by_year)
