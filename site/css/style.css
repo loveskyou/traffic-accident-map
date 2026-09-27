@@ -10,7 +10,7 @@ body { font-family: var(--font); color: var(--ink); background: var(--bg); font-
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .muted { color: var(--ink-2); font-size: 13px; }
 
-.app { display: grid; grid-template-rows: auto auto 1fr auto auto; height: 100dvh; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto auto; height: 100dvh; }
 .panel { display: contents; }
 .title { display: none; }
 
