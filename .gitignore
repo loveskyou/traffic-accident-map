@@ -1,0 +1,11 @@
+# 인증키가 들어가는 설정 파일
+config.local.*
+.env
+
+# 공공 API 원본 데이터 (인터넷에 올리지 않음)
+raw/
+
+# 파이썬 부산물
+__pycache__/
+*.pyc
+.venv/
