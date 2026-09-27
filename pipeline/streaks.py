@@ -1,4 +1,4 @@
-"""1년 단위 유형에서 같은 장소가 몇 년 연속 다발지역이었는지 계산한다."""
+"""여러 해에 걸쳐 같은 장소를 묶고, 몇 년 연속 다발지역이었는지 계산한다."""
 import math
 
 EARTH_RADIUS_M = 6_371_000
@@ -16,7 +16,7 @@ def assign_streaks(points_by_year, radius_m):
     """기준연도 오름차순으로 각 점을 반경 안의 가장 가까운 기존 장소에 연결한다.
 
     연결된 장소가 바로 전해에도 나왔으면 연속 연수를 1 늘리고, 아니면 1부터 다시 센다.
-    한 장소는 한 해에 한 점에만 연결된다.
+    한 장소는 한 해에 한 점에만 연결된다. 각 점에 장소 번호(place)를 적는다.
     """
     places = []
     for year in sorted(points_by_year):
@@ -41,4 +41,5 @@ def assign_streaks(points_by_year, radius_m):
             place.update(lat=point["lat"], lng=point["lng"], last_year=year)
             used.add(best)
             point["streak"], point["since"] = place["streak"], place["since"]
+            point["place"] = best
     return points_by_year

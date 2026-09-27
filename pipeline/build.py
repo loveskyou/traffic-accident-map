@@ -60,6 +60,42 @@ def polygon_coords(item):
         return None
 
 
+RECORD_FIELDS = ("c", "k", "d", "s", "l", "w")
+
+
+def _longest_run(years):
+    best = run = 1
+    for a, b in zip(years, years[1:]):
+        run = run + 1 if b == a + 1 else 1
+        best = max(best, run)
+    return best
+
+
+def merge_places(points_by_year, annual):
+    """assign_streaks로 장소 번호가 붙은 점들을 장소마다 하나로 합친다(전체 연도 보기용)."""
+    groups = {}
+    for year in sorted(points_by_year):
+        for point in points_by_year[year]:
+            groups.setdefault(point["place"], []).append((year, point))
+    merged = []
+    for place, entries in groups.items():
+        years = [year for year, _ in entries]
+        latest_year, latest = entries[-1]
+        type_id = latest["id"].rsplit("-", 2)[0]
+        one = {
+            "id": f"{type_id}-all-{place}",
+            "n": latest["n"], "lat": latest["lat"], "lng": latest["lng"], "sd": latest["sd"],
+            "c": latest["c"], "years": years,
+            "recs": [[year] + [p[f] for f in RECORD_FIELDS] for year, p in reversed(entries)],
+            "py": latest_year, "pid": latest["id"],
+        }
+        if annual:
+            one["streak"] = _longest_run(years)
+        merged.append(one)
+    merged.sort(key=lambda m: (-len(m["years"]), -m["c"], m["id"]))
+    return merged
+
+
 def _write(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -99,8 +135,16 @@ def build(raw_dir=RAW_DIR, out_dir=OUT_DIR, years=catalog.YEARS, today=None):
                 points_by_year[year] = list(seen.values())
             else:
                 (out_dir / str(year) / f"{type_id}.json").unlink(missing_ok=True)
-        if t["period"] == "annual":
-            assign_streaks(points_by_year, t["radius_m"])
+        annual = t["period"] == "annual"
+        assign_streaks(points_by_year, t["radius_m"])
+        if points_by_year:
+            _write(out_dir / "all" / f"{type_id}.json", merge_places(points_by_year, annual))
+        for points in points_by_year.values():
+            for point in points:
+                point.pop("place")
+                if not annual:
+                    point.pop("streak")
+                    point.pop("since")
         available[type_id] = sorted(points_by_year)
         for year, points in points_by_year.items():
             points.sort(key=lambda p: (-p["c"], p["id"]))

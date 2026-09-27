@@ -75,3 +75,47 @@ def test_build_end_to_end(tmp_path):
     assert types["pedestrian"]["years"] == [2025]
     assert types["child"]["years"] == []
     assert read(out / "meta.json") == {"updated": "2026-09-27", "years": [2024, 2025]}
+
+
+def test_all_years_file_merges_same_place(tmp_path):
+    raw, out = tmp_path / "raw", tmp_path / "out"
+    write_raw(raw, "lg", 2023, "11-680", 11, [item(1, count=4)])
+    write_raw(raw, "lg", 2025, "11-680", 11, [item(2, count=9), item(3, lat="37.6", lng="127.1", count=20)])
+    write_raw(raw, "pedestrian", 2024, "11-680", 11, [item(7, count=8)])
+    write_raw(raw, "pedestrian", 2025, "11-680", 11, [item(8, count=9)])
+    build.build(raw_dir=raw, out_dir=out, years=[2023, 2024, 2025], today=datetime.date(2026, 9, 27))
+
+    lg = read(out / "all" / "lg.json")
+    assert len(lg) == 2
+    merged = lg[0]
+    assert merged["years"] == [2023, 2025]
+    assert merged["recs"] == [[2025, 9, 10, 0, 1, 9, 0], [2023, 4, 5, 0, 1, 4, 0]]
+    assert (merged["n"], merged["c"], merged["py"], merged["pid"], merged["sd"]) == ("지점2", 9, 2025, "lg-2025-2", 11)
+    assert merged["streak"] == 1
+    assert lg[1]["years"] == [2025]
+
+    ped = read(out / "all" / "pedestrian.json")
+    assert len(ped) == 1 and ped[0]["years"] == [2024, 2025]
+    assert "streak" not in ped[0]
+    assert "place" not in read(out / "2025" / "lg.json")[0]
+
+
+def test_all_years_streak_is_longest_run():
+    points = {y: [{"id": f"lg-{y}-1", "n": "A", "lat": 37.5, "lng": 127.0, "sd": 11,
+                   "c": 3, "k": 3, "d": 0, "s": 0, "l": 3, "w": 0}] for y in (2021, 2022, 2024, 2025)}
+    from pipeline.streaks import assign_streaks
+    assign_streaks(points, 150)
+    merged = build.merge_places(points, annual=True)
+    assert merged[0]["years"] == [2021, 2022, 2024, 2025]
+    assert merged[0]["streak"] == 2
+
+
+def test_all_years_ids_are_unique():
+    def p(y, fid, lat):
+        return {"id": f"lg-{y}-{fid}", "n": "A", "lat": lat, "lng": 127.0, "sd": 11,
+                "c": 3, "k": 3, "d": 0, "s": 0, "l": 3, "w": 0}
+    points = {2024: [p(2024, 2, 37.5)], 2025: [p(2025, 2, 37.7)]}
+    from pipeline.streaks import assign_streaks
+    assign_streaks(points, 150)
+    ids = [m["id"] for m in build.merge_places(points, annual=True)]
+    assert len(set(ids)) == 2

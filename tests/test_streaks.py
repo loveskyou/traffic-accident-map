@@ -38,3 +38,10 @@ def test_nearest_place_wins():
     assign_streaks(data, 150)
     assert data[2022][0]["streak"] == 2
     assert data[2022][0]["since"] == 2021
+
+
+def test_same_place_gets_same_place_number():
+    data = {2021: [pt(37.5, 127.0), pt(37.6, 127.0)], 2022: [pt(37.5003, 127.0)]}
+    assign_streaks(data, 150)
+    assert data[2022][0]["place"] == data[2021][0]["place"]
+    assert data[2021][1]["place"] != data[2021][0]["place"]
