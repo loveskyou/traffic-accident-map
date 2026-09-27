@@ -48,3 +48,12 @@ ${streak}<dl class="d-counts">${count("사고", p.c, "건")}${count("사망", p.
 <p class="d-criteria">선정 기준: ${escapeHtml(type.criteria)}</p>
 <a class="d-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">카카오맵에서 보기</a>`;
 }
+
+// 늦게 끝난 이전 요청이 최신 화면을 덮어쓰지 않도록 번호표를 나눠 준다.
+export function createLatest() {
+  let current = 0;
+  return {
+    next: () => ++current,
+    isCurrent: (ticket) => ticket === current,
+  };
+}

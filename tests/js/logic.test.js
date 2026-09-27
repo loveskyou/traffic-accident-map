@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  escapeHtml, periodLabel, activeTypeIds, filterPoints, distanceM, pointsNear, inBounds, detailHtml,
+  escapeHtml, periodLabel, activeTypeIds, filterPoints, distanceM, pointsNear, inBounds, detailHtml, createLatest,
 } from "../../site/js/logic.js";
 
 const LG = { id: "lg", name: "일반 (시군구별 상위 3곳)", short: "일반", color: "#E4572E", period: "annual", criteria: "기준 <문장>", years: [2024, 2025] };
@@ -61,4 +61,12 @@ test("detailHtml hides streak below 2 and for rolling types", () => {
   const html = detailHtml(rolling, PED, 2025);
   assert.ok(!html.includes("연속 다발지역"));
   assert.ok(html.includes("2023~2025년 3년간"));
+});
+
+test("createLatest: only the newest ticket is current", () => {
+  const latest = createLatest();
+  const a = latest.next();
+  const b = latest.next();
+  assert.equal(latest.isCurrent(a), false);
+  assert.equal(latest.isCurrent(b), true);
 });

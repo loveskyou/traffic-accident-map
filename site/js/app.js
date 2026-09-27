@@ -2,7 +2,7 @@ import { KAKAO_JS_KEY } from "./config.js";
 import { loadKakao, createMap } from "./mapAdapter.js";
 import { getMeta, getTypes, getRegions, getPoints, getPolygons } from "./data.js";
 import { createState } from "./state.js";
-import { activeTypeIds, filterPoints, pointsNear, inBounds, detailHtml } from "./logic.js";
+import { activeTypeIds, filterPoints, pointsNear, inBounds, detailHtml, createLatest } from "./logic.js";
 import {
   showMapError, showFooter, setupControls, markTypeError, showDetail, showChooser,
   setupDetailClose, setupSearch, setupRegions,
@@ -31,7 +31,8 @@ async function main() {
   setupRegions(map, regions);
 
   let visible = [];
-  let renderSeq = 0;
+  const pointsTurn = createLatest();
+  const polygonsTurn = createLatest();
 
   const openPoint = (point) => {
     const year = state.get().year;
@@ -44,11 +45,11 @@ async function main() {
   };
 
   async function renderPolygons() {
+    const turn = polygonsTurn.next();
     if (map.getLevel() > POLYGON_LEVEL) {
       map.showPolygons([]);
       return;
     }
-    const seq = renderSeq;
     const { year } = state.get();
     const bounds = map.getBounds();
     const inView = visible.filter((p) => inBounds(p, bounds));
@@ -59,7 +60,7 @@ async function main() {
     }
     const loaded = new Map();
     for (const [key, promise] of files) loaded.set(key, await promise);
-    if (seq !== renderSeq) return;
+    if (!polygonsTurn.isCurrent(turn)) return;
     map.showPolygons(inView.flatMap((p) => {
       const coords = loaded.get(`${p.t}|${p.sd}`)?.[p.id];
       return coords ? [{ coords, color: typeById[p.t].color }] : [];
@@ -67,7 +68,7 @@ async function main() {
   }
 
   async function renderPoints() {
-    const seq = ++renderSeq;
+    const turn = pointsTurn.next();
     const { year, enabled, streakOnly } = state.get();
     const lists = await Promise.all(activeTypeIds(enabled, types, year).map(async (id) => {
       try {
@@ -79,7 +80,7 @@ async function main() {
         return [];
       }
     }));
-    if (seq !== renderSeq) return;
+    if (!pointsTurn.isCurrent(turn)) return;
     visible = filterPoints(lists.flat(), { streakOnly });
     map.showPoints(visible, (p) => typeById[p.t].color, openPoint);
     document.getElementById("detail").hidden = true;
