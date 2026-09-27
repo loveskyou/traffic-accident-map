@@ -30,6 +30,12 @@ def test_collect_one_all_empty_uses_first_code():
     assert collect.collect_one("lg", 2025, WONJU, "K", get=get) == ([], [51, 130])
 
 
+def test_collect_one_empty_then_server_error_raises():
+    get = make_get(lambda p, q: EMPTY if q["siDo"] == "51" else (500, "server error"))
+    with pytest.raises(kc.KoroadError):
+        collect.collect_one("lg", 2021, WONJU, "K", get=get)
+
+
 def test_collect_one_param_error_then_empty_is_empty():
     get = make_get(lambda p, q: PARAM_ERROR if q["siDo"] == "51" else EMPTY)
     assert collect.collect_one("lg", 2025, WONJU, "K", get=get) == ([], [51, 130])

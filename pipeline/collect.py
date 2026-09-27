@@ -39,22 +39,32 @@ def load_auth_key(path=CONFIG):
 
 
 def collect_one(type_id, year, region, auth_key, get=kc.http_get):
-    """[시도, 시군구] 코드 후보를 차례로 시도한다. 결과가 있는 첫 짝을 쓰고, 모두 비면 첫 짝으로 빈 결과를 돌려준다."""
-    last_error, answered = None, False
+    """[시도, 시군구] 코드 후보를 차례로 시도한다. 결과가 있는 첫 짝을 쓴다.
+
+    빈 결과는 적어도 한 후보가 "데이터 없음"으로 답하고, 나머지 후보도 "데이터 없음"이거나
+    요청 변수 오류(그 연도에 없는 코드)일 때만 돌려준다. 그 밖의 오류가 난 후보가 있거나
+    모든 후보가 요청 변수 오류면 오류를 올려 다음 실행에서 다시 받게 한다.
+    """
+    last_error, param_error, answered = None, None, False
     for sido, gugun in region["codes"]:
         try:
             items = kc.fetch_all(catalog.endpoint(type_id), auth_key, catalog.year_code(type_id, year),
                                  sido, gugun, get=get)
         except kc.QuotaExceeded:
             raise
+        except kc.ParamError as error:
+            param_error = error
+            continue
         except kc.KoroadError as error:
             last_error = error
             continue
         answered = True
         if items:
             return items, [sido, gugun]
-    if not answered:
+    if last_error is not None:
         raise last_error
+    if not answered:
+        raise param_error
     return [], list(region["codes"][0])
 
 

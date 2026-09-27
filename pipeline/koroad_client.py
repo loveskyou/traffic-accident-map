@@ -18,6 +18,10 @@ class QuotaExceeded(KoroadError):
     pass
 
 
+class ParamError(KoroadError):
+    """결과 코드 10(요청 변수 오류). 그 연도에 없는 코드로 물었을 때 나온다."""
+
+
 def http_get(url, timeout=30):
     request = urllib.request.Request(url, headers={"User-Agent": "traffic-accident-map/1.0"})
     try:
@@ -60,6 +64,8 @@ def parse_page(status, text):
     if code != "00":
         if _looks_like_quota(message):
             raise QuotaExceeded(message)
+        if code == "10":
+            raise ParamError(f"결과 코드 {code} {message}")
         raise KoroadError(f"결과 코드 {code} {message}")
     container = body.get("items") or {}
     items = container.get("item", []) if isinstance(container, dict) else container
