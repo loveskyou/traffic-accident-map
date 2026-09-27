@@ -1,1 +1,1 @@
-export const KAKAO_JS_KEY = "여기에_카카오_JavaScript_키";
+export const KAKAO_JS_KEY = "56429e6398ac0a45f0cd9bc9efa81789";
